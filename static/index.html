@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six Strings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 30C9 24 4 17 4 10a12 12 0 0 1 24 0c0 7-5 14-12 20z' fill='%23e9a23b'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 45C13 37 5 26 5 15.5A19 19 0 0 1 43 15.5C43 26 35 37 24 45z" fill="var(--brass)"/>
+      <g stroke="var(--wood)" stroke-linecap="round">
+        <line x1="12" y1="11" x2="36" y2="11" stroke-width="1"/>
+        <line x1="11" y1="16" x2="37" y2="16" stroke-width="1.3"/>
+        <line x1="12" y1="21" x2="36" y2="21" stroke-width="1.6"/>
+        <line x1="14" y1="26" x2="34" y2="26" stroke-width="1.9"/>
+        <line x1="17" y1="31" x2="31" y2="31" stroke-width="2.2"/>
+        <line x1="20" y1="36" x2="28" y2="36" stroke-width="2.5"/>
+      </g>
+    </svg>
+    <span>Six Strings</span>
+  </a>
+  <nav>
+    <a href="#/" data-nav="library">Library</a>
+    <a href="#/upload" data-nav="upload">Upload sheet music</a>
+  </nav>
+  <div class="coach-pill" id="coachPill" title="Local AI coach status"><span class="dot"></span><span id="coachPillText">Coach…</span></div>
+</header>
+
+<main id="view"></main>
+
+<template id="tpl-library">
+  <section class="hero">
+    <h1>Sheet music in. <em>Guitar tab out.</em></h1>
+    <p>Six Strings reads notation with an open-source vision model, works out the easiest fingering on the fretboard, rates how hard it is, and coaches you through it with a local AI.</p>
+  </section>
+  <div class="filters">
+    <button class="chip active" data-level="all">All</button>
+    <button class="chip" data-level="Beginner">Beginner</button>
+    <button class="chip" data-level="Intermediate">Intermediate</button>
+    <button class="chip" data-level="Advanced">Advanced</button>
+    <input id="search" class="search" placeholder="Search songs…">
+  </div>
+  <div id="grid" class="grid"><div class="loading">Tuning up the library…</div></div>
+</template>
+
+<template id="tpl-upload">
+  <section class="upload-wrap">
+    <h1>Turn sheet music into tab</h1>
+    <p class="muted">Upload a photo or scan of printed sheet music (PNG/JPG), or a MusicXML file. Single-line melodies work best.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.musicxml,.xml,.mxl" hidden>
+      <div class="drop-inner">
+        <div class="drop-icon">♪</div>
+        <strong>Drop a file here</strong> or click to choose
+        <div class="muted small">Images go through <b>oemer</b>, an open-source deep-learning music recognition model, running on this laptop.</div>
+      </div>
+    </label>
+    <div id="progress" class="progress hidden">
+      <div class="steps">
+        <div class="step" data-s="1"><span></span>Reading the notation (oemer)</div>
+        <div class="step" data-s="2"><span></span>Parsing notes</div>
+        <div class="step" data-s="3"><span></span>Choosing frets</div>
+        <div class="step" data-s="4"><span></span>Scoring difficulty</div>
+      </div>
+      <div class="muted small" id="progressNote"></div>
+    </div>
+    <div id="uploadErr" class="error hidden"></div>
+    <p class="muted small tip">Tip: need a clean test image? Open any library song, switch the view to <b>Notation</b>, and take a screenshot.</p>
+  </section>
+</template>
+
+<template id="tpl-song">
+  <div class="song-head">
+    <a href="#/" class="back">← Library</a>
+    <div class="titles">
+      <h1 id="sTitle"></h1>
+      <div class="meta" id="sMeta"></div>
+    </div>
+    <div class="score-badge" id="sBadge"></div>
+  </div>
+  <div class="song-layout">
+    <section class="sheet-col">
+      <div class="toolbar">
+        <button id="btnPlay" class="btn primary" disabled>▶ Play</button>
+        <button id="btnStop" class="btn" disabled>■</button>
+        <label class="speed">Speed <input type="range" id="speed" min="25" max="150" step="5" value="100"><span id="speedVal">100%</span></label>
+        <button id="btnLoop" class="btn toggle" title="Loop">⟳ Loop</button>
+        <button id="btnMetro" class="btn toggle" title="Metronome">♩ Click</button>
+        <div class="seg" id="viewSeg">
+          <button data-v="both" class="on">Tab + Notation</button><button data-v="tabs">Tab</button><button data-v="score">Notation</button>
+        </div>
+        <div class="seg" id="modeSeg" title="Fingering style">
+          <button data-m="standard" class="on">Standard</button><button data-m="beginner">Beginner</button>
+        </div>
+      </div>
+      <div class="paper" id="paperWrap">
+        <div id="alphaTab"></div>
+        <pre id="asciiTab" class="ascii hidden"></pre>
+        <div id="renderMsg" class="render-msg">Rendering tab…</div>
+      </div>
+    </section>
+    <aside class="side-col">
+      <div class="card">
+        <h3>Why it's rated <span id="sScore2"></span></h3>
+        <div class="meter"><div id="meterFill"></div></div>
+        <ul class="reasons" id="sReasons"></ul>
+      </div>
+      <div class="card">
+        <h3>Trickiest measures</h3>
+        <div id="sHard"></div>
+      </div>
+      <div class="card coach">
+        <div class="coach-head">
+          <h3>AI practice coach</h3>
+          <span class="muted small" id="coachModel"></span>
+        </div>
+        <div class="coach-actions">
+          <button class="btn primary" id="btnPlan">Build my practice plan</button>
+          <button class="btn" data-q="Explain the difficulty score in plain English.">Explain the score</button>
+          <button class="btn" data-q="What should I learn after this song?">What next?</button>
+        </div>
+        <div id="chat" class="chat"></div>
+        <form id="chatForm" class="chat-form">
+          <input id="chatInput" placeholder="Ask anything, e.g. “Is there an easier way to play measure 3?”" autocomplete="off">
+          <button class="btn primary">Ask</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+</template>
+
+<script src="/vendor/alphaTab.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
