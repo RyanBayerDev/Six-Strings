@@ -73,7 +73,12 @@ async function showLibrary() {
         ${meterBars(s.score)}
         <ul>${s.top_reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
         <div class="card-foot"><span class="pill lvl-${s.level}">${s.level}</span><span>${s.tempo} BPM · ${s.time_signature} · ${s.measures} bars</span></div>
+        ${s.source !== "library" ? `<button class="del-btn" data-del="${esc(s.id)}" data-title="${esc(s.title)}" title="Delete this upload">Delete</button>` : ""}
       </a>`).join("") : `<div class="loading">No songs match.</div>`;
+    $$("[data-del]").forEach(b => b.onclick = async e => {
+      e.preventDefault(); e.stopPropagation();
+      if (await deleteSong(b.dataset.del, b.dataset.title)) draw();
+    });
   };
   $$(".chip").forEach(c => c.onclick = () => { $$(".chip").forEach(x => x.classList.remove("active")); c.classList.add("active"); level = c.dataset.level; draw(); });
   $("#search").oninput = e => { q = e.target.value.toLowerCase(); draw(); };
@@ -81,6 +86,16 @@ async function showLibrary() {
     libraryCache = await (await fetch("/api/songs")).json();
     draw();
   } catch (e) { $("#grid").innerHTML = `<div class="error">Couldn't load the library: ${esc(e)}</div>`; }
+}
+
+async function deleteSong(id, title) {
+  if (!confirm(`Delete "${title}" from the library?\n\nThis removes the uploaded file. Built-in songs can't be deleted.`)) return false;
+  try {
+    const r = await fetch(`/api/songs/${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!r.ok) throw new Error((await r.json()).detail || "Delete failed");
+    if (libraryCache) libraryCache = libraryCache.filter(s => s.id !== id);
+    return true;
+  } catch (e) { alert("Couldn't delete: " + e.message); return false; }
 }
 
 /* ------------------------------------------------ upload */
@@ -142,6 +157,12 @@ async function showSong(id, keepChat = false) {
   $("#sTitle").textContent = d.title;
   $("#sMeta").textContent = [d.composer, `${d.tempo} BPM`, d.time_signature, `key of ${d.key}`, `${d.measures} measures`].filter(Boolean).join(" · ");
   $("#sBadge").innerHTML = `<div class="num">${diff.score.toFixed(1)}<small>/10</small></div><span class="pill lvl-${diff.level}">${diff.level}</span>`;
+  if (d.source !== "library") {
+    const del = document.createElement("button");
+    del.className = "btn del-song"; del.textContent = "Delete upload";
+    del.onclick = async () => { if (await deleteSong(d.id, d.title)) location.hash = "#/"; };
+    $(".song-head").appendChild(del);
+  }
   $("#sScore2").textContent = `${diff.score.toFixed(1)}/10`;
   requestAnimationFrame(() => $("#meterFill").style.width = `${diff.score * 10}%`);
   $("#sReasons").innerHTML = diff.reasons.slice(0, 6).map(r =>

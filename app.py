@@ -15,6 +15,7 @@ import requests
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 
 import engine
 from songs import SONGS
@@ -132,7 +133,7 @@ async def upload(file: UploadFile = File(...)):
     if ext in (".png", ".jpg", ".jpeg", ".webp", ".bmp"):
         img = dest_dir / f"page{ext if ext != '.webp' else '.png'}"
         img.write_bytes(data)
-        xml_path = run_oemer(img, dest_dir)
+        xml_path = await run_in_threadpool(run_oemer, img, dest_dir)   # don't freeze the server
         origin = "photo (oemer)"
     elif ext in (".musicxml", ".xml", ".mxl"):
         xml_path = dest_dir / f"score{ext}"
@@ -156,6 +157,7 @@ async def upload(file: UploadFile = File(...)):
 def delete_song(song_id: str):
     if song_id in _sources and _sources[song_id]["kind"] == "xml":
         _sources.pop(song_id)
+        shutil.rmtree(DATA / song_id, ignore_errors=True)   # remove the uploaded file(s) too
         for k in list(_cache):
             if k[0] == song_id:
                 _cache.pop(k)

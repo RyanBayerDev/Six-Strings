@@ -54,6 +54,10 @@ main{max-width:1380px;margin:0 auto;padding:28px 32px 60px}
 .card-song ul{margin:0;padding-left:16px;color:var(--muted);font-size:13px}
 .card-foot{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:auto}
 .loading{color:var(--muted);padding:40px}
+.card-song{position:relative}
+.del-btn{align-self:flex-end;background:transparent;border:1px solid var(--line);color:var(--muted);font:inherit;font-size:12px;padding:4px 10px;border-radius:8px;cursor:pointer}
+.del-btn:hover,.btn.del-song:hover{border-color:var(--hard);color:var(--hard)}
+.btn.del-song{background:transparent;color:var(--muted)}
 
 /* upload */
 .upload-wrap{max-width:760px;margin:20px auto}
