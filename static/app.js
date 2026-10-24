@@ -214,8 +214,8 @@ function setupPlayer() {
               soundFont: "/vendor/soundfont/sonivox.sf2", scrollElement: $("#paperWrap"), scrollOffsetY: -40 },
   };
   // dark-mode sheet colors (falls back to default black-on-light if this alphaTab version rejects them)
-  const darkRes = { mainGlyphColor: "#e6e8f2", secondaryGlyphColor: "#9a9cb3", staffLineColor: "#3c3e55",
-                    barSeparatorColor: "#4a4c66", barNumberColor: "#a66bff", scoreInfoColor: "#e6e8f2" };
+  const darkRes = { mainGlyphColor: "#ece8e1", secondaryGlyphColor: "#a8a29a", staffLineColor: "#4a4642",
+                    barSeparatorColor: "#5a5550", barNumberColor: "#d9c7a7", scoreInfoColor: "#ece8e1" };
   try {
     api = new alphaTab.AlphaTabApi(el, { ...base, display: { ...base.display, resources: darkRes } });
   } catch (e) {
