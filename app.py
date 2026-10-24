@@ -26,7 +26,7 @@ DATA = ROOT / "data"
 DATA.mkdir(exist_ok=True)
 UPLOADS_FILE = DATA / "uploads.json"
 
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
 ALPHATAB_CDN = ["https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.5/dist/",
                 "https://cdn.jsdelivr.net/npm/@coderline/alphatab@1/dist/"]
