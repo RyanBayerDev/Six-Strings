@@ -29,8 +29,7 @@ function md(text) {
 
 function meterBars(score) {
   const n = Math.round(score);
-  return `<div class="frets">${Array.from({ length: 10 }, (_, i) =>
-    `<i style="${i < n ? `background:${i < 4 ? "var(--easy)" : i < 7 ? "var(--mid)" : "var(--hard)"}` : ""}"></i>`).join("")}</div>`;
+  return `<div class="frets">${Array.from({ length: 10 }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("")}</div>`;
 }
 
 /* ------------------------------------------------ coach status */
@@ -65,7 +64,7 @@ async function showLibrary() {
     const items = (libraryCache || []).filter(s => (level === "all" || s.level === level) &&
       (s.title + " " + (s.composer || "")).toLowerCase().includes(q));
     $("#grid").innerHTML = items.length ? items.map(s => `
-      <a class="card-song" href="#/song/${encodeURIComponent(s.id)}">
+      <a class="card-song lvl-card-${s.level}" href="#/song/${encodeURIComponent(s.id)}">
         <div class="card-top">
           <div><h3>${esc(s.title)}</h3><div class="by">${esc(s.composer || (s.source !== "library" ? "Uploaded · " + s.source : ""))}</div></div>
           <div class="num">${s.score.toFixed(1)}<small>/10</small></div>
@@ -207,15 +206,23 @@ function setupPlayer() {
   triedPlain = false;
   if (!window.alphaTab) { showAscii("alphaTab script not loaded"); return; }
   const el = $("#alphaTab");
+  const base = {
+    core: { fontDirectory: "/vendor/font/", engine: "svg" },
+    display: { scale: 1.0, layoutMode: "page" },
+    notation: { elements: { scoreTitle: false, scoreWordsAndMusic: false, effectTempo: true, guitarTuning: false } },
+    player: { enablePlayer: true, enableCursor: true, enableUserInteraction: true,
+              soundFont: "/vendor/soundfont/sonivox.sf2", scrollElement: $("#paperWrap"), scrollOffsetY: -40 },
+  };
+  // dark-mode sheet colors (falls back to default black-on-light if this alphaTab version rejects them)
+  const darkRes = { mainGlyphColor: "#e6e8f2", secondaryGlyphColor: "#9a9cb3", staffLineColor: "#3c3e55",
+                    barSeparatorColor: "#4a4c66", barNumberColor: "#a66bff", scoreInfoColor: "#e6e8f2" };
   try {
-    api = new alphaTab.AlphaTabApi(el, {
-      core: { fontDirectory: "/vendor/font/", engine: "svg" },
-      display: { scale: 1.0, layoutMode: "page" },
-      notation: { elements: { scoreTitle: false, scoreWordsAndMusic: false, effectTempo: true, guitarTuning: false } },
-      player: { enablePlayer: true, enableCursor: true, enableUserInteraction: true,
-                soundFont: "/vendor/soundfont/sonivox.sf2", scrollElement: $("#paperWrap"), scrollOffsetY: -40 },
-    });
-  } catch (e) { showAscii(e); return; }
+    api = new alphaTab.AlphaTabApi(el, { ...base, display: { ...base.display, resources: darkRes } });
+  } catch (e) {
+    console.warn("dark sheet colors not supported, using defaults", e);
+    $("#paperWrap").classList.add("light-paper");
+    try { api = new alphaTab.AlphaTabApi(el, base); } catch (e2) { showAscii(e2); return; }
+  }
   api.renderFinished.on(() => $("#renderMsg").classList.add("hidden"));
   api.error.on(e => {
     console.error("alphaTab error", e);
